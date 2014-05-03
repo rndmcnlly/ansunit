@@ -2,11 +2,12 @@
 
 ## Overview
 
-**Ansunit** is a declarative unit testing framework for *answer set programming* (primarily using the tools from the [Potassco](http://potassco.sourceforge.net/) project). Test suite descriptions are defined in [YAML](http://www.yaml.org/) syntax, and they translate into the building blocks from Python's [unittest](https://docs.python.org/2/library/unittest.html) testing framework.
+**Ansunit** is a declarative unit testing framework for *answer set programming* (primarily using the tools from the [Potassco](http://potassco.sourceforge.net/) project). Test suite descriptions are defined in [YAML](http://www.yaml.org/) syntax, and they translate into the test and suites within Python's [unittest](https://docs.python.org/2/library/unittest.html) testing framework.
 
 ## Usage
-Place `ansunit.py` somewhere in your Python path.
-`python -m ansunit tests.yaml`	
+Place `ansunit.py` somewhere in your Python path or simply `pip install ansunit` to fetch a stable version from PyPI. Then...
+
+	python -m ansunit tests.yaml
 
 ## Concepts
 A test suite specification is a nested object definition in which important key names start with the word `Test`. Basic test specifications may define a **program** (a body of AnsProlog code), solver **arguments** (passed on the command line), and define an **expectation** for the result of running the program (regarding its satisfiability). Complex test specifications may make use of reusable **modules** described in a **definitions** specification.
