@@ -1,0 +1,29 @@
+Definitions:
+  foo: {filename: foo.lp}
+  bar: {filename: bar.lp}
+  both: {group: [instance, encoding]}
+  instance: {reference: bar}
+  inline: |
+    #const width = 3.
+    dim(1..width).
+    { p(X) } :- dim(X).
+
+
+Test twisted references:
+  Definitions:
+    encoding: {reference: foo}
+  Modules: both
+  Expect: SAT
+
+Test inline various:
+  Modules: inline
+  Expect: SAT
+
+  Test small:
+    Arguments: -c width=1 
+
+  Test medium:
+    Arguments: -c width=3 
+
+  Test large:
+    Arguments: -c width=5 
