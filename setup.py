@@ -8,6 +8,7 @@ setup(name='ansunit',
       author='Adam M. Smith',
       author_email='adam@adamsmith.as',
       url='https://github.com/rndmcnlly/ansunit',
+      license='MIT',
       py_modules=['ansunit'],
       requires=['PyYAML'],
      )
