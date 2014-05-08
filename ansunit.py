@@ -11,11 +11,14 @@ import re
 
 parser = argparse.ArgumentParser(description="AnsProlog unit testing")
 parser.add_argument("suite", help="test suite in YAML syntax")
-parser.add_argument("-c","--dump_canonical",action="store_true")
+parser.add_argument("-c","--dump_canonical",action="store_true",help="dump test spec with all details pushed to leaves; exit")
+parser.add_argument("-l","--dump_list",action="store_true",help="dump transformed test names with filter matching; exit")
 parser.add_argument("-v","--verbosity", action="count", default=0)
-parser.add_argument("-s","--solver", help="solver command", default="clingo")
+parser.add_argument("-s","--solver", default="clingo",help="which solver to use (default: clingo)")
 parser.add_argument("-o","--show_stdout",action="store_true")
 parser.add_argument("-e","--show_stderr",action="store_true")
+parser.add_argument("-x","--show_execution",action="store_true")
+parser.add_argument("-m","--filter_match",type=str,nargs="?",default='',help="only run tests matching this regex")
 parser.add_argument("-a","--solver_args",type=str,nargs="*",default=[])
 
 def ensure_list(v):
@@ -88,18 +91,35 @@ def canonicalize_spec(spec, parent_context):
     }
     return test_spec
 
+def flatten_spec(spec, prefix,joiner=" :: "):
+  """Flatten a canonical specification with nesting into one without nesting.
+  When building unique names, concatenate the given prefix to the local test
+  name without the "Test " tag."""
+
+  if any(filter(operator.methodcaller("startswith","Test"),spec.keys())):
+    flat_spec = {}
+    for (k,v) in spec.items():
+      flat_spec.update(flatten_spec(v,prefix + joiner + k[5:]))
+    return flat_spec 
+  else:
+    return {"Test "+prefix: spec}
+
+
+
 class SolverTestCase(unittest.TestCase):
 
   def __init__(self, spec, args, description):
     self.spec = spec
     self.description = description
+    self.args = args
     super(SolverTestCase,self).__init__()
 
   def __str__(self):
     return self.description
 
   def runTest(self):
-    cmd = "%s %s %s" % (args.solver, ' '.join(args.solver_args), ' '.join(self.spec['Arguments']))
+    cmd = "%s %s %s" % (self.args.solver, ' '.join(self.args.solver_args), ' '.join(self.spec['Arguments']))
+    if self.args.show_execution: print "EXECUTING: ",cmd
     proc = subprocess.Popen(
         cmd,
         shell=True,
@@ -107,8 +127,8 @@ class SolverTestCase(unittest.TestCase):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
     (out, err) = proc.communicate(self.spec['Program'])
-    if args.show_stderr: print err
-    if args.show_stdout: print out
+    if self.args.show_stderr: print err
+    if self.args.show_stdout: print out
     if self.spec['Expect'] == 'SAT':
       self.assertEqual(proc.returncode,10,msg='Expected SAT')
     elif self.spec['Expect'] == 'UNSAT':
@@ -118,18 +138,7 @@ class SolverTestCase(unittest.TestCase):
     else:
       assert False
 
-def make_suite(spec,args,description):
-
-  test_names = filter(operator.methodcaller('startswith','Test'),spec)
-
-  if test_names:
-    subtests = {t: make_suite(spec[t],args,description + ' :: ' + t[5:]) for t in test_names}
-    return unittest.TestSuite(map(operator.itemgetter(1),sorted(subtests.items())))
-  else:
-    return SolverTestCase(spec,args,description)
-
-
-if __name__ == "__main__":
+def main():
   args = parser.parse_args()
 
   filename = args.suite
@@ -146,8 +155,23 @@ if __name__ == "__main__":
 
   spec = canonicalize_spec(spec, initial_context)
 
-  if args.dump_canonical: print yaml.dump(spec)
+  if args.dump_canonical:
+    print yaml.dump(spec)
+    return
 
-  suite = make_suite(spec,args,filename)
+
+  flat_spec = flatten_spec(spec,filename)
+  matcher = re.compile(args.filter_match)
+
+  if args.dump_list:
+    print "\n".join([(" * " if matcher.search(k) else " - ") + k for k in sorted(flat_spec.keys())])
+    return
+
+  active_tests = filter(lambda (k,v): matcher.search(k) is not None, sorted(flat_spec.items()))
+
+  suite = unittest.TestSuite([SolverTestCase(v,args,k) for (k,v) in active_tests])
 
   unittest.TextTestRunner(verbosity=args.verbosity).run(suite)
+
+if __name__ == "__main__":
+  main()
