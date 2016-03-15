@@ -130,7 +130,7 @@ class SolverTestCase(unittest.TestCase):
     if self.args.show_stderr: print err
     if self.args.show_stdout: print out
     if self.spec['Expect'] == 'SAT':
-      self.assertEqual(proc.returncode,10,msg='Expected SAT')
+      self.assertIn(proc.returncode,[10,30],msg='Expected SAT')
     elif self.spec['Expect'] == 'UNSAT':
       self.assertEqual(proc.returncode,20,msg='Expected UNSAT')
     elif self.spec['Expect'] == 'OPTIMAL':
