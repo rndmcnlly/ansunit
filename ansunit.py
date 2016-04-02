@@ -2,6 +2,8 @@
 
 """ansunit.py: declarative unit testing for answer set programming"""
 
+from __future__ import print_function
+
 import argparse
 import unittest
 import subprocess
@@ -119,16 +121,16 @@ class SolverTestCase(unittest.TestCase):
 
   def runTest(self):
     cmd = "%s %s %s" % (self.args.solver, ' '.join(self.args.solver_args), ' '.join(self.spec['Arguments']))
-    if self.args.show_execution: print "EXECUTING: ",cmd
+    if self.args.show_execution: print("EXECUTING: ",cmd)
     proc = subprocess.Popen(
         cmd,
         shell=True,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
-    (out, err) = proc.communicate(self.spec['Program'])
-    if self.args.show_stderr: print err
-    if self.args.show_stdout: print out
+    (out, err) = proc.communicate(self.spec['Program'].encode('utf8'))
+    if self.args.show_stderr: print(err)
+    if self.args.show_stdout: print(out)
     if self.spec['Expect'] == 'SAT':
       self.assertIn(proc.returncode,[10,30],msg='Expected SAT')
     elif self.spec['Expect'] == 'UNSAT':
@@ -156,7 +158,7 @@ def main():
   spec = canonicalize_spec(spec, initial_context)
 
   if args.dump_canonical:
-    print yaml.dump(spec)
+    print(yaml.dump(spec))
     return
 
 
@@ -164,10 +166,10 @@ def main():
   matcher = re.compile(args.filter_match)
 
   if args.dump_list:
-    print "\n".join([(" * " if matcher.search(k) else " - ") + k for k in sorted(flat_spec.keys())])
+    print("\n".join([(" * " if matcher.search(k) else " - ") + k for k in sorted(flat_spec.keys())]))
     return
 
-  active_tests = filter(lambda (k,v): matcher.search(k) is not None, sorted(flat_spec.items()))
+  active_tests = filter(lambda t: matcher.search(t[0]) is not None, sorted(flat_spec.items()))
 
   suite = unittest.TestSuite([SolverTestCase(v,args,k) for (k,v) in active_tests])
 
