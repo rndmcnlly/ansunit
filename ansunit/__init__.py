@@ -58,7 +58,7 @@ def resolve_module(module, definitions):
   """Resolve (through indirections) the program contents of a module definition.
   The result is a list of program chunks."""
 
-  assert module in definitions
+  assert module in definitions, "No definition for module '%s'" % module
   
   d = definitions[module]
   if type(d) == dict:
