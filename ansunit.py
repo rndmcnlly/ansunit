@@ -20,7 +20,8 @@ parser.add_argument("-s","--solver", default="clingo",help="which solver to use 
 parser.add_argument("-o","--show_stdout",action="store_true")
 parser.add_argument("-e","--show_stderr",action="store_true")
 parser.add_argument("-x","--show_execution",action="store_true")
-parser.add_argument("-m","--filter_match",type=str,nargs="?",default='',help="only run tests matching this regex")
+parser.add_argument("-m","--filter_match",type=str,nargs="*",default=[],help="only run tests matching this regex")
+parser.add_argument("-n","--filter_nomatch",type=str,nargs="*",default=[],help="only run tests *not* matching this regex")
 parser.add_argument("-a","--solver_args",type=str,nargs="*",default=[])
 
 def ensure_list(v):
@@ -163,13 +164,21 @@ def main():
 
 
   flat_spec = flatten_spec(spec,filename)
-  matcher = re.compile(args.filter_match)
+
+  matchers = [re.compile(m) for m in args.filter_match]
+  nomatchers = [re.compile(n) for n in args.filter_nomatch]
+
+  def selected(k):
+      pos = all([m.search(k) for m in matchers])
+      neg = any([n.search(k) for n in nomatchers])
+      return all([m.search(k) for m in matchers]) \
+          and not any([n.search(k) for n in nomatchers])
 
   if args.dump_list:
-    print("\n".join([(" * " if matcher.search(k) else " - ") + k for k in sorted(flat_spec.keys())]))
+    print("\n".join([(" * " if selected(k) else " - ") + k for k in sorted(flat_spec.keys())]))
     return
 
-  active_tests = filter(lambda t: matcher.search(t[0]) is not None, sorted(flat_spec.items()))
+  active_tests = filter(lambda t: selected(t[0]), sorted(flat_spec.items()))
 
   suite = unittest.TestSuite([SolverTestCase(v,args,k) for (k,v) in active_tests])
 
