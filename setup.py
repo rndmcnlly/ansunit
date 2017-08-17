@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='ansunit',
-      version='0.1.5',
+      version='0.1.7',
       description='Declarative unit testing for answer set programming projects',
       author='Adam M. Smith',
       author_email='adam@adamsmith.as',

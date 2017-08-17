@@ -182,7 +182,10 @@ def main():
 
   suite = unittest.TestSuite([SolverTestCase(v,args,k) for (k,v) in active_tests])
 
-  unittest.TextTestRunner(verbosity=args.verbosity).run(suite)
+  runner = unittest.TextTestRunner(verbosity=args.verbosity)
+  result = runner.run(suite)
+  return not result.wasSuccessful()
 
 if __name__ == "__main__":
-  main()
+  import sys
+  sys.exit(main() or 0)
